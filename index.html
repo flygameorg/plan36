@@ -1,45 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows Clone</title>
-
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows Desktop Clone</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="desktop">
+<div id="desktop">
+
+  <div class="icon" onclick="openWindow('win1')">
+    <img src="https://cdn-icons-png.flaticon.com/512/25/25694.png">
+    <div>文件</div>
+  </div>
+
+  <div class="icon" onclick="openWindow('win2')">
+    <img src="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <div>设置</div>
+  </div>
 
 </div>
 
-<div id="start-menu">
-
-    <div id="start-header">
-        Windows XP
-    </div>
-
-    <div class="menu-item">My Computer</div>
-    <div class="menu-item">Documents</div>
-    <div class="menu-item">Internet</div>
-    <div class="menu-item">Settings</div>
-    <div class="menu-item">Shut Down</div>
-
+<div class="window" id="win1" style="top:100px;left:100px;">
+  <div class="titlebar" onmousedown="dragStart(event, this.parentElement)">
+    <span>文件管理器</span>
+    <button onclick="closeWindow('win1')">X</button>
+  </div>
+  <div class="content">
+    文件内容区域
+  </div>
 </div>
 
-<div id="taskbar">
-
-    <button id="start">
-        Start
-    </button>
-
-    <div id="taskbar-apps"></div>
-
-    <div id="clock"></div>
-
+<div class="window" id="win2" style="top:160px;left:200px;">
+  <div class="titlebar" onmousedown="dragStart(event, this.parentElement)">
+    <span>设置</span>
+    <button onclick="closeWindow('win2')">X</button>
+  </div>
+  <div class="content">
+    设置内容区域
+  </div>
 </div>
 
-<script src="js/main.js"></script>
+<div id="taskbar">Windows Clone</div>
 
+<script src="script.js"></script>
 </body>
 </html>
