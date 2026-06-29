@@ -1,136 +1,68 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    user-select:none;
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+  background: #1e1e1e;
 }
 
-html,body{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    font-family:Tahoma,sans-serif;
+/* 桌面 */
+#desktop {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0078d7, #1e1e1e);
 }
 
-body{
-    background:#008080;
+/* 图标 */
+.icon {
+  width: 80px;
+  text-align: center;
+  color: white;
+  margin: 20px;
+  cursor: pointer;
+  display: inline-block;
 }
 
-#desktop{
-    width:100%;
-    height:calc(100% - 40px);
-    padding:15px;
-    display:flex;
-    flex-direction:column;
-    gap:18px;
+.icon img {
+  width: 48px;
+  height: 48px;
 }
 
-.icon{
-    width:80px;
-    text-align:center;
-    color:white;
-    cursor:pointer;
+/* 窗口 */
+.window {
+  position: absolute;
+  width: 320px;
+  height: 220px;
+  background: white;
+  border: 1px solid #333;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  display: none;
 }
 
-.icon img{
-    width:48px;
-    height:48px;
+/* 标题栏 */
+.titlebar {
+  background: #0078d7;
+  color: white;
+  padding: 6px;
+  display: flex;
+  justify-content: space-between;
+  cursor: move;
 }
 
-.icon span{
-    display:block;
-    margin-top:6px;
-    font-size:13px;
+/* 内容 */
+.content {
+  padding: 10px;
 }
 
-#taskbar{
-    position:fixed;
-    bottom:0;
-    left:0;
-    width:100%;
-    height:40px;
-
-    background:#c0c0c0;
-
-    display:flex;
-    align-items:center;
-}
-
-#start{
-
-    width:80px;
-    height:100%;
-
-    border:none;
-
-    background:#bdbdbd;
-
-    font-weight:bold;
-
-    cursor:pointer;
-
-}
-
-#taskbar-apps{
-    flex:1;
-}
-
-#clock{
-
-    width:80px;
-
-    text-align:center;
-
-}
-
-#start-menu{
-
-    position:fixed;
-
-    bottom:40px;
-
-    left:0;
-
-    width:260px;
-
-    background:#ECE9D8;
-
-    border:2px solid #245EDB;
-
-    display:none;
-
-    box-shadow:4px 4px 10px rgba(0,0,0,.35);
-
-}
-
-#start-header{
-
-    background:#245EDB;
-
-    color:white;
-
-    padding:12px;
-
-    font-size:22px;
-
-    font-weight:bold;
-
-}
-
-.menu-item{
-
-    padding:12px;
-
-    cursor:pointer;
-
-    font-size:15px;
-
-}
-
-.menu-item:hover{
-
-    background:#316AC5;
-
-    color:white;
-
+/* 任务栏 */
+#taskbar {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 40px;
+  background: #111;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
 }
