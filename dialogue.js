@@ -12,7 +12,7 @@ const CONFIG = {
 
   // 拿到密钥后，提示玩家去哪里取档案。ARG 组织者请替换成实际的取件说明。
   archiveInstruction:
-    "// 请将上面这串密钥交给对应的档案入口。\n// （具体地点/方式由 ARG 组织者在此处自行替换说明文字）",
+    "// 请将上面这串密钥交给对应的档案入口。\n// https://flygameorg.github.io/flygame",
 
   // 每轮之间自动推进的行显示间隔（毫秒），影响“打字机”式节奏
   lineDelay: 550,
