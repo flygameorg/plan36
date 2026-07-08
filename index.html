@@ -1,80 +1,32 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>System</title>
-<style>
-body {
-  margin: 0;
-  background: black;
-  color: #00ff9d;
-  font-family: monospace;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.box {
-  text-align: center;
-}
-
-.title {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.status {
-  opacity: 0.8;
-  margin-top: 8px;
-}
-
-.bar {
-  width: 240px;
-  height: 10px;
-  border: 1px solid #00ff9d;
-  margin-top: 12px;
-  position: relative;
-  overflow: hidden;
-}
-
-.fill {
-  height: 100%;
-  width: 35%;
-  background: #00ff9d;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.3; width: 20%; }
-  50% { opacity: 1; width: 60%; }
-  100% { opacity: 0.3; width: 20%; }
-}
-</style>
+<title>PROC/003</title>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="box">
-  <div class="title">SYSTEM LOCKED</div>
-  <div>未开放访问权限</div>
-  <div class="status">请等待系统开放</div>
+<div class="crt">
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
 
-  <div class="bar">
-    <div class="fill"></div>
-  </div>
+  <header class="term-header">
+    <div class="term-header-left">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="term-title">PROC/003 — 本地会话</span>
+    </div>
+    <div class="term-header-right">
+      <span id="uptime">UPTIME 14827d 00:00:00</span>
+    </div>
+  </header>
 
-  <div id="time" class="status"></div>
+  <main class="term-log" id="log" aria-live="polite"></main>
+
+  <footer class="term-options" id="options"></footer>
 </div>
 
-<script>
-
-}
-
-setInterval(update, 1000);
-update();
-</script>
-
+<script src="dialogue.js"></script>
 </body>
 </html>
