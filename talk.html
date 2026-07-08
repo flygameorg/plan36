@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>通讯 - 003</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --chat-bg: #111118;
+            --bubble-003: #1a1a28;
+            --bubble-player: #1e3a5f;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --accent: #4a9eff;
+            --accent-dim: #2a6ecc;
+            --danger: #e05555;
+            --option-bg: #161622;
+            --option-hover: #1e1e32;
+            --option-border: #2a2a3a;
+            --input-indicator: #3a3a50;
+            --key-highlight: #f0c040;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+            --radius-sm: 12px;
+            --radius-md: 18px;
+            --radius-lg: 22px;
+            --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, -apple-system,
+                sans-serif;
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'PingFang SC', monospace;
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: var(--font-sans);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            background: var(--chat-bg);
+            position: relative;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.3);
+            border-left: 1px solid #1a1a25;
+            border-right: 1px solid #1a1a25;
+        }
+
+        /* 顶部状态栏 */
+        .chat-header {
+            flex-shrink: 0;
+            padding: 14px 18px;
+            background: #0d0d16;
+            border-bottom: 1px solid #1c1c2a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+            position: relative;
+        }
+        .chat-header .back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: #ccc;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .chat-header .back-btn:hover {
+            background: #1c1c2e;
+        }
+        .chat-header .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3a3a55, #1e1e35);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: #ccc;
+            letter-spacing: 1px;
+            border: 2px solid #2a2a40;
+        }
+        .chat-header .info {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-header .name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #e8e8f0;
+            letter-spacing: 0.5px;
+        }
+        .chat-header .status {
+            font-size: 11px;
+            color: #7a7a90;
+            margin-top: 1px;
+            letter-spacing: 0.3px;
+        }
+        .chat-header .status.online {
+            color: #5cb870;
+        }
+        .chat-header .status.typing {
+            color: #c0a050;
+            animation: statusPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes statusPulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* 消息区域 */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            background: var(--chat-bg);
+        }
+        .messages-area::-webkit-scrollbar {
+            width: 3px;
+        }
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #2a2a3a;
+            border-radius: 3px;
+        }
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* 消息气泡 */
+        .message-row {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            animation: msgIn 0.35s ease-out;
+        }
+        .message-row.from-003 {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+        .message-row.from-player {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+        @keyframes msgIn {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message-bubble {
+            padding: 11px 15px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            line-height: 1.55;
+            letter-spacing: 0.3px;
+            word-break: break-word;
+            position: relative;
+            color: var(--text-primary);
+            box-shadow: var(--shadow);
+        }
+        .from-003 .message-bubble {
+            background: var(--bubble-003);
+            border-bottom-left-radius: 6px;
+            border: 1px solid #222235;
+        }
+        .from-player .message-bubble {
+            background: var(--bubble-player);
+            border-bottom-right-radius: 6px;
+            border: 1px solid #1e3a5f;
+        }
+        .message-time {
+            font-size: 10px;
+            color: #555;
+            margin-top: 3px;
+            padding: 0 4px;
+            letter-spacing: 0.2px;
+        }
+
+        /* 对方正在输入指示器 */
+        .typing-indicator {
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--bubble-003);
+            border-radius: var(--radius-md);
+            border-bottom-left-radius: 6px;
+            border: 1px solid #222235;
+            animation: msgIn 0.3s ease-out;
+            color: #999;
+            font-size: 12px;
+            letter-spacing: 0.4px;
+        }
+        .typing-indicator .dots {
+            display: flex;
+            gap: 3px;
+        }
+        .typing-indicator .dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #777;
+            animation: dotBounce 1.4s ease-in-out infinite;
+        }
+        .typing-indicator .dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        .typing-indicator .dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator .dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes dotBounce {
+            0%,
+            80%,
+            100% {
+                transform: translateY(0);
+                background: #777;
+            }
+            40% {
+                transform: translateY(-7px);
+                background: #bbb;
+            }
+        }
+
+        /* 选项区域 */
+        .options-area {
+            flex-shrink: 0;
+            padding: 10px 14px;
+            padding-bottom: calc(10px + var(--safe-bottom));
+            background: #0d0d16;
+            border-top: 1px solid #1c1c2a;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        .options-area.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 13px 16px;
+            background: var(--option-bg);
+            border: 1px solid var(--option-border);
+            border-radius: var(--radius-sm);
+            color: #c8c8d8;
+            font-size: 13.5px;
+            cursor: pointer;
+            letter-spacing: 0.4px;
+            line-height: 1.4;
+            transition: all 0.2s;
+            font-family: var(--font-sans);
+            position: relative;
+            overflow: hidden;
+        }
+        .option-btn:hover {
+            background: var(--option-hover);
+            border-color: #4a4a60;
+            color: #e8e8f8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        .option-btn:active {
+            transform: scale(0.98);
+            background: #1a1a2e;
+            transition: all 0.08s;
+        }
+        .option-btn .opt-num {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            text-align: center;
+            background: #252535;
+            border-radius: 50%;
+            margin-right: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #999;
+            flex-shrink: 0;
+            vertical-align: middle;
+        }
+        .option-btn:disabled {
+            opacity: 0.45;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        /* 终止覆盖层 */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .overlay.hidden {
+            display: none;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .overlay-box {
+            background: #1a1a28;
+            border: 1px solid #3a3a50;
+            border-radius: 16px;
+            padding: 28px 24px;
+            text-align: center;
+            max-width: 340px;
+            width: 90%;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        }
+        .overlay-box h3 {
+            color: #e05555;
+            font-size: 17px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .overlay-box p {
+            color: #999;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .overlay-box .key-display {
+            display: inline-block;
+            background: #0d0d16;
+            color: var(--key-highlight);
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            padding: 14px 20px;
+            border-radius: 10px;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            border: 2px dashed #4a3a20;
+            word-break: break-all;
+        }
+        .overlay-box .key-url {
+            color: #7ab8f0;
+            font-size: 11px;
+            word-break: break-all;
+            margin-top: 6px;
+        }
+        .overlay-btn {
+            display: inline-block;
+            padding: 10px 28px;
+            background: #2a2a40;
+            color: #ccc;
+            border: 1px solid #444;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            font-family: var(--font-sans);
+        }
+        .overlay-btn:hover {
+            background: #3a3a52;
+            color: #fff;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .message-bubble {
+                font-size: 13.5px;
+                padding: 10px 13px;
+            }
+            .option-btn {
+                font-size: 13px;
+                padding: 11px 14px;
+            }
+            .chat-header {
+                padding: 10px 12px;
+            }
+            .chat-header .name {
+                font-size: 14px;
+            }
+            .messages-area {
+                padding: 10px 8px;
+                gap: 7px;
+            }
+            .options-area {
+                padding: 8px 10px;
+                padding-bottom: calc(8px + var(--safe-bottom));
+                gap: 6px;
+            }
+            .message-row {
+                max-width: 88%;
+            }
+        }
+        @media (min-width: 768px) {
+            .message-row {
+                max-width: 72%;
+            }
+            .message-bubble {
+                font-size: 14.5px;
+                padding: 12px 17px;
+            }
+            .option-btn {
+                font-size: 14px;
+                padding: 14px 18px;
+            }
+            .messages-area {
+                padding: 20px 22px;
+                gap: 12px;
+            }
+            .options-area {
+                padding: 12px 18px;
+                padding-bottom: calc(12px + var(--safe-bottom));
+                gap: 9px;
+            }
+        }
+        @media (min-width: 1024px) {
+            .app-container {
+                border-radius: 12px;
+                margin-top: 16px;
+                margin-bottom: 16px;
+                height: calc(100% - 32px);
+            }
+            .message-row {
+                max-width: 65%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="appContainer">
+        <!-- 头部 -->
+        <div class="chat-header">
+            <button class="back-btn" title="返回">←</button>
+            <div class="avatar">003</div>
+            <div class="info">
+                <div class="name">003</div>
+                <div class="status online" id="statusText">在线</div>
+            </div>
+        </div>
+
+        <!-- 消息区域 -->
+        <div class="messages-area" id="messagesArea"></div>
+
+        <!-- 选项区域 -->
+        <div class="options-area hidden" id="optionsArea"></div>
+
+        <!-- 终止覆盖层（好感度负数） -->
+        <div class="overlay hidden" id="terminateOverlay">
+            <div class="overlay-box">
+                <h3>对话已终止</h3>
+                <p>对方已结束了此次通讯。<br>或许换个方式交流会更好。</p>
+                <button class="overlay-btn" onclick="location.reload()">重新开始</button>
+            </div>
+        </div>
+
+        <!-- 密钥覆盖层（信任度满） -->
+        <div class="overlay hidden" id="keyOverlay">
+            <div class="overlay-box">
+                <h3 style="color:#f0c040;">🔑 访问密钥</h3>
+                <p>003分享了文档的访问密钥：</p>
+                <div class="key-display" id="keyDisplay"></div>
+                <p class="key-url">文档地址：https://flygameorg.github.io/flygame/</p>
+                <p style="font-size:11px;color:#777;margin-top:4px;">请妥善保管此密钥，自行前往上述地址检视文档。</p>
+                <button class="overlay-btn" onclick="location.reload()">重新开始</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 核心状态 ====================
+            const SECRET_KEY = generateRandomKey();
+            let trust = 0; // 信任度 0-100（隐藏）
+            let affection = 20; // 好感度 -100~100（隐藏），初始20
+            let dialogueEnded = false;
+            let currentNodeId = 'start';
+            let messageHistory = []; // 存储已显示的消息用于滚动
+
+            // 生成随机密钥
+            function generateRandomKey() {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                const seg1 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars
+                .length)]).join('');
+                const seg2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars
+                .length)]).join('');
+                const seg3 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars
+                .length)]).join('');
+                return `${seg1}-${seg2}-${seg3}`;
+            }
+
+            // ==================== DOM元素 ====================
+            const messagesArea = document.getElementById('messagesArea');
+            const optionsArea = document.getElementById('optionsArea');
+            const statusText = document.getElementById('statusText');
+            const terminateOverlay = document.getElementById('terminateOverlay');
+            const keyOverlay = document.getElementById('keyOverlay');
+            const keyDisplay = document.getElementById('keyDisplay');
+            const appContainer = document.getElementById('appContainer');
+
+            keyDisplay.textContent = SECRET_KEY;
+
+            // ==================== 对话节点定义 ====================
+            // 每个节点：{ id, text(003说的话), options: [{ text, nextId, trustCh, affCh }] }
+            // trustCh: 信任度变化, affCh: 好感度变化
+            // 特殊nextId: 'terminate'=好感度归零终止, 'key_reveal'=信任度满给密钥
+            const dialogueNodes = new Map();
+
+            // ---------- 阶段1：初始接触（信任度0-15）----------
+            dialogueNodes.set('start', {
+                id: 'start',
+                text: '你好，请问是你吗？我这边收到一个联络请求，想确认一下。',
+                options: [
+                    { text: '是我，请问你是？', nextId: 'n002', trustCh: 8, affCh: 5 },
+                    { text: '你是谁？怎么有我的联系方式？', nextId: 'n003', trustCh: 3, affCh: -3 },
+                    { text: '（不回复，保持沉默）', nextId: 'n004', trustCh: 0, affCh: -8 },
+                ],
+            });
+
+            dialogueNodes.set('n002', {
+                id: 'n002',
+                text: '你可以叫我003。我知道这样联系你有些突然，但有些事情需要确认一下才能继续。你最近还好吗？',
+                options: [
+                    { text: '还好，003这个名字挺特别的。你找我什么事？', nextId: 'n005', trustCh: 10, affCh: 6 },
+                    { text: '003？这是代号吗？你们是做什么的？', nextId: 'n006', trustCh: 4, affCh: -2 },
+                    { text: '我不想跟用代号的人交流，请表明真实身份。', nextId: 'n007', trustCh: -3, affCh: -10 },
+                ],
+            });
+
+            dialogueNodes.set('n003', {
+                id: 'n003',
+                text: '我理解你的谨慎。我是003，这个编号只是便于沟通。如果你愿意聊几句，我可以说更多。',
+                options: [
+                    { text: '好吧，003。你想确认什么？', nextId: 'n005', trustCh: 7, affCh: 3 },
+                    { text: '我觉得这很可疑。给我一个相信你的理由。', nextId: 'n008', trustCh: 2, affCh: -5 },
+                    { text: '我不想继续了。', nextId: 'terminate', trustCh: 0, affCh: -15 },
+                ],
+            });
+
+            dialogueNodes.set('n004', {
+                id: 'n004',
+                text: '……你不说话也没关系。不过既然联络上了，我还是希望你能回应一下。这对我很重要。',
+                options: [
+                    { text: '好吧，我在。你想说什么？', nextId: 'n005', trustCh: 5, affCh: 1 },
+                    { text: '（继续沉默）', nextId: 'terminate', trustCh: 0, affCh: -12 },
+                    { text: '你到底是谁？不说清楚我不会回应。', nextId: 'n008', trustCh: 2, affCh: -4 },
+                ],
+            });
+
+            dialogueNodes.set('n005', {
+                id: 'n005',
+                text: '谢谢你愿意听我说。其实也不算复杂——我手头有一些资料，需要交给对的人。但在那之前，我得确定你是可以信任的。',
+                options: [
+                    { text: '什么资料？为什么要交给我？', nextId: 'n009', trustCh: 10, affCh: 5 },
+                    { text: '信任是双向的。你也得让我了解你一些。', nextId: 'n010', trustCh: 8, affCh: 7 },
+                    { text: '资料？听起来很麻烦，我不想掺和。', nextId: 'n011', trustCh: -2, affCh: -8 },
+                ],
+            });
+
+            dialogueNodes.set('n006', {
+                id: 'n006',
+                text: '代号只是为了方便。至于我们做什么……现在还不能说太多。但如果你愿意耐心聊下去，自然会明白。',
+                options: [
+                    { text: '行吧，那聊下去看看。', nextId: 'n005', trustCh: 5, affCh: 2 },
+                    { text: '遮遮掩掩的，我不太放心。', nextId: 'n008', trustCh: 1, affCh: -4 },
+                    { text: '那就直接说重点吧。', nextId: 'n009', trustCh: 6, affCh: 1 },
+                ],
+            });
+
+            dialogueNodes.set('n007', {
+                id: 'n007',
+                text: '我理解你的顾虑。但有些时候，代号反而比真名更诚实。如果你实在不舒服，我们可以到此为止。',
+                options: [
+                    { text: '……算了，003就003吧。继续。', nextId: 'n005', trustCh: 3, affCh: -2 },
+                    { text: '到此为止吧。', nextId: 'terminate', trustCh: 0, affCh: -10 },
+                    { text: '给我一个名字，哪怕只是昵称。', nextId: 'n010', trustCh: 5, affCh: 4 },
+                ],
+            });
+
+            dialogueNodes.set('n008', {
+                id: 'n008',
+                text: '说实话，我也在试探你。我们彼此都不了解对方，这很正常。但如果你一直保持敌意，那这条路就走不下去了。',
+                options: [
+                    { text: '你说得对，我放下戒备。聊聊吧。', nextId: 'n005', trustCh: 6, affCh: 4 },
+                    { text: '敌意谈不上，只是需要时间。', nextId: 'n009', trustCh: 5, affCh: 2 },
+                    { text: '那就别聊了。', nextId: 'terminate', trustCh: 0, affCh: -14 },
+                ],
+            });
+
+            dialogueNodes.set('n009', {
+                id: 'n009',
+                text: '资料的内容现在不便细说，但它们很重要。至于为什么是你——因为有人觉得你合适。我不能透露更多了，至少现在不行。',
+                options: [
+                    { text: '有人觉得我合适？是谁？', nextId: 'n012', trustCh: 8, affCh: 3 },
+                    { text: '既然重要，那我会认真对待。你继续说吧。', nextId: 'n013', trustCh: 12, affCh: 8 },
+                    { text: '这种模糊的说法让我很不安。', nextId: 'n011', trustCh: -1, affCh: -5 },
+                ],
+            });
+
+            dialogueNodes.set('n010', {
+                id: 'n010',
+                text: '你想了解我什么？我是003，做着一份普通的工作，每天处理各种信息。不算有趣，但很充实。你呢，你做什么的？',
+                options: [
+                    { text: '我也是普通上班族。听起来我们差不多。', nextId: 'n013', trustCh: 10, affCh: 8 },
+                    { text: '我的工作不太方便说。互相理解吧。', nextId: 'n012', trustCh: 5, affCh: 2 },
+                    { text: '你问这个干什么？又想套我话？', nextId: 'n011', trustCh: -3, affCh: -9 },
+                ],
+            });
+
+            dialogueNodes.set('n011', {
+                id: 'n011',
+                text: '……看来你对我还有很深的戒心。没关系，我可以等。但时间不等人，你确定要这样下去吗？',
+                options: [
+                    { text: '抱歉，我调整一下态度。继续吧。', nextId: 'n013', trustCh: 5, affCh: 0 },
+                    { text: '我只是比较谨慎，不是针对你。', nextId: 'n012', trustCh: 4, affCh: 1 },
+                    { text: '我觉得我们不适合继续交流。', nextId: 'terminate', trustCh: 0, affCh: -13 },
+                ],
+            });
+
+            dialogueNodes.set('n012', {
+                id: 'n012',
+                text: '谨慎是好事，我也是因为谨慎才要慢慢确认。这样吧，我们先随便聊聊，等你觉得舒服了再深入。你觉得呢？',
+                options: [
+                    { text: '好主意。你平时喜欢做什么？', nextId: 'n014', trustCh: 8, affCh: 7 },
+                    { text: '可以，但别太久。', nextId: 'n013', trustCh: 5, affCh: 3 },
+                    { text: '我不喜欢闲聊，说正事。', nextId: 'n015', trustCh: 3, affCh: -3 },
+                ],
+            });
+
+            dialogueNodes.set('n013', {
+                id: 'n013',
+                text: '好，那说回正事。我需要确认几件事：你最近有没有收到过什么不寻常的消息？或者遇到过什么奇怪的事？',
+                options: [
+                    { text: '你这么一说……好像确实有一些。', nextId: 'n016', trustCh: 12, affCh: 6 },
+                    { text: '没有，一切正常。为什么这么问？', nextId: 'n017', trustCh: 6, affCh: 3 },
+                    { text: '我不想回答这种问题。', nextId: 'n015', trustCh: -2, affCh: -7 },
+                ],
+            });
+
+            dialogueNodes.set('n014', {
+                id: 'n014',
+                text: '我啊……喜欢在空闲时看看书，偶尔写点东西。生活挺简单的。你呢，有什么爱好吗？',
+                options: [
+                    { text: '我也喜欢看书，最近在看一些悬疑小说。', nextId: 'n018', trustCh: 10, affCh: 9 },
+                    { text: '我的爱好比较普通，看电影听音乐之类的。', nextId: 'n017', trustCh: 8, affCh: 6 },
+                    { text: '这跟你要确认的事情有关系吗？', nextId: 'n015', trustCh: 2, affCh: -2 },
+                ],
+            });
+
+            dialogueNodes.set('n015', {
+                id: 'n015',
+                text: '有关系，也有没关系。建立信任需要过程，而聊天是其中一部分。如果你一直抗拒，我很难继续。',
+                options: [
+                    { text: '我明白了，我会配合的。', nextId: 'n017', trustCh: 6, affCh: 2 },
+                    { text: '那就聊吧，但别绕弯子。', nextId: 'n016', trustCh: 5, affCh: 0 },
+                    { text: '我受够了这种模糊的对话。再见。', nextId: 'terminate', trustCh: 0, affCh: -16 },
+                ],
+            });
+
+            // ---------- 阶段2：关系建立（信任度15-40）----------
+            dialogueNodes.set('n016', {
+                id: 'n016',
+                text: '你提到遇到了一些不寻常的事。能具体说说吗？不用太详细，大概描述一下就好。',
+                options: [
+                    { text: '有几条奇怪的消息，内容含糊但感觉在暗示什么。', nextId: 'n019', trustCh: 12, affCh: 7 },
+                    { text: '其实也没什么，可能是我想多了。', nextId: 'n017', trustCh: 4, affCh: 2 },
+                    { text: '你先说清楚你这边的情况，我再说。', nextId: 'n020', trustCh: 5, affCh: -1 },
+                ],
+            });
+
+            dialogueNodes.set('n017', {
+                id: 'n017',
+                text: '没关系，每个人对"不寻常"的定义不同。我只是想确认你有没有被某些信息困扰过。如果有，我们可以一起理一理。',
+                options: [
+                    { text: '确实有一些信息让我在意。你似乎知道些什么？', nextId: 'n019', trustCh: 11, affCh: 6 },
+                    { text: '目前还好，但如果有什么我会告诉你。', nextId: 'n018', trustCh: 8, affCh: 5 },
+                    { text: '你问太多了，我想先缓缓。', nextId: 'n020', trustCh: 3, affCh: -3 },
+                ],
+            });
+
+            dialogueNodes.set('n018', {
+                id: 'n018',
+                text: '悬疑小说啊，看来你喜欢解谜的感觉。那正好，我们现在的对话也有点像解谜，不是吗？一层一层地揭开。',
+                options: [
+                    { text: '确实有点那个意思。你成功引起了我的好奇心。', nextId: 'n019', trustCh: 10, affCh: 8 },
+                    { text: '谜题有趣，但谜底更重要。你准备什么时候揭晓？', nextId: 'n021', trustCh: 9, affCh: 5 },
+                    { text: '我不喜欢被当成解谜的对象。', nextId: 'n020', trustCh: 2, affCh: -4 },
+                ],
+            });
+
+            dialogueNodes.set('n019', {
+                id: 'n019',
+                text: '很好，我们开始接近核心了。这么说吧——我手上这份资料，和你最近遇到的那些"不寻常"有关联。你意识到了吗？',
+                options: [
+                    { text: '我隐约觉得有联系，但不清楚具体是什么。', nextId: 'n022', trustCh: 13, affCh: 7 },
+                    { text: '你是说有人在背后安排这一切？', nextId: 'n021', trustCh: 9, affCh: 4 },
+                    { text: '你越说我越糊涂了。能不能直接点？', nextId: 'n023', trustCh: 5, affCh: 0 },
+                ],
+            });
+
+            dialogueNodes.set('n020', {
+                id: 'n020',
+                text: '我理解你需要时间。不过我们的对话进度确实有点慢了。你愿意稍微放开一些吗？我不会害你的。',
+                options: [
+                    { text: '好吧，我试试。你说，我听。', nextId: 'n022', trustCh: 7, affCh: 3 },
+                    { text: '我还是有点犹豫……但继续吧。', nextId: 'n021', trustCh: 5, affCh: 1 },
+                    { text: '不，我觉得我们到此为止。', nextId: 'terminate', trustCh: 0, affCh: -11 },
+                ],
+            });
+
+            dialogueNodes.set('n021', {
+                id: 'n021',
+                text: '有些事情不是一个人能安排的。但确实有一些力量在运作。我能说的就是——你被选中不是偶然的。你身上有一些特质。',
+                options: [
+                    { text: '什么特质？我很普通啊。', nextId: 'n024', trustCh: 10, affCh: 6 },
+                    { text: '这种说法让我有点紧张。', nextId: 'n022', trustCh: 7, affCh: 3 },
+                    { text: '别故弄玄虚了，说人话。', nextId: 'n023', trustCh: 3, affCh: -5 },
+                ],
+            });
+
+            dialogueNodes.set('n022', {
+                id: 'n022',
+                text: '你比你自己想象的更敏锐。这就是为什么你会被注意到。好了，我不卖关子了——资料是一份记录，关于一些……不为人知的事情。',
+                options: [
+                    { text: '不为人知的事情？听起来很严重。', nextId: 'n025', trustCh: 12, affCh: 7 },
+                    { text: '记录了什么内容？能透露一些吗？', nextId: 'n024', trustCh: 10, affCh: 5 },
+                    { text: '你在暗示什么？我觉得不太对劲。', nextId: 'n023', trustCh: 3, affCh: -3 },
+                ],
+            });
+
+            dialogueNodes.set('n023', {
+                id: 'n023',
+                text: '我没有暗示什么不好的事情。只是有些事情需要合适的传递者。如果你觉得不舒服，我们可以放慢节奏。',
+                options: [
+                    { text: '放慢可以，但别停下来。继续吧。', nextId: 'n024', trustCh: 6, affCh: 2 },
+                    { text: '好，我冷静一下。你接着说。', nextId: 'n025', trustCh: 5, affCh: 1 },
+                    { text: '放慢也没用，我感觉你在耍我。', nextId: 'terminate', trustCh: 0, affCh: -14 },
+                ],
+            });
+
+            dialogueNodes.set('n024', {
+                id: 'n024',
+                text: '资料里记录了一些事件的时间线和细节。我不能在这里全说出来，但可以告诉你——它涉及的范围比你想象的要广。',
+                options: [
+                    { text: '时间线？事件？这听起来像调查记录。', nextId: 'n026', trustCh: 12, affCh: 6 },
+                    { text: '所以你是在做某种调查工作？', nextId: 'n025', trustCh: 10, affCh: 5 },
+                    { text: '我不确定我想知道这些。', nextId: 'n027', trustCh: 4, affCh: -2 },
+                ],
+            });
+
+            dialogueNodes.set('n025', {
+                id: 'n025',
+                text: '可以这么理解。我负责整理和传递信息。而你是接收方——前提是我们能建立足够的信任。到目前为止，我觉得你还可以。',
+                options: [
+                    { text: '谢谢你的认可。我也觉得你挺真诚的。', nextId: 'n028', trustCh: 14, affCh: 10 },
+                    { text: '那还需要什么才能让你完全信任我？', nextId: 'n026', trustCh: 11, affCh: 6 },
+                    { text: '"还可以"？这评价真保守。', nextId: 'n027', trustCh: 5, affCh: -1 },
+                ],
+            });
+
+            dialogueNodes.set('n026', {
+                id: 'n026',
+                text: '要完全信任，我需要看到你在关键时刻的选择。不是现在，但很快。在那之前，我想问你——如果有一天你需要保守一个秘密，你能做到吗？',
+                options: [
+                    { text: '我能。守口如瓶是我的强项。', nextId: 'n029', trustCh: 13, affCh: 8 },
+                    { text: '那得看是什么秘密。', nextId: 'n028', trustCh: 8, affCh: 3 },
+                    { text: '为什么要问我这个？你在测试我？', nextId: 'n027', trustCh: 3, affCh: -4 },
+                ],
+            });
+
+            dialogueNodes.set('n027', {
+                id: 'n027',
+                text: '测试这个说法不太准确。我只是需要了解你。毕竟之后的事情，需要双方都有足够的心理准备。',
+                options: [
+                    { text: '心理准备？你到底要给我看什么？', nextId: 'n029', trustCh: 7, affCh: 2 },
+                    { text: '我准备好了，继续吧。', nextId: 'n028', trustCh: 8, affCh: 4 },
+                    { text: '我越来越觉得不对，暂停一下。', nextId: 'terminate', trustCh: 0, affCh: -9 },
+                ],
+            });
+
+            dialogueNodes.set('n028', {
+                id: 'n028',
+                text: '很好。说实话，和你聊天比我想象的顺利。很多人到这一步已经退缩了。你没退缩，这让我觉得也许找对人了。',
+                options: [
+                    { text: '退缩不是我的风格。我们继续推进吧。', nextId: 'n030', trustCh: 14, affCh: 9 },
+                    { text: '我也觉得我们挺合拍的。', nextId: 'n029', trustCh: 11, affCh: 8 },
+                    { text: '别急着下结论，后面还长着呢。', nextId: 'n031', trustCh: 7, affCh: 2 },
+                ],
+            });
+
+            dialogueNodes.set('n029', {
+                id: 'n029',
+                text: '行，那我们进入下一个阶段。我需要跟你确认一些具体的事情——关于你所在的城市，以及你最近几周的行程。方便说吗？',
+                options: [
+                    { text: '可以，我在[城市名]，最近没怎么外出。', nextId: 'n032', trustCh: 12, affCh: 7 },
+                    { text: '这涉及隐私了，能先告诉我为什么需要这些吗？', nextId: 'n030', trustCh: 7, affCh: 1 },
+                    { text: '不行，这些太私人了。', nextId: 'n031', trustCh: 2, affCh: -6 },
+                ],
+            });
+
+            dialogueNodes.set('n030', {
+                id: 'n030',
+                text: '因为资料里的信息需要和你的实际情况交叉验证。这是最后几道确认步骤之一。我保证不会滥用你的信息。',
+                options: [
+                    { text: '好，我相信你。我在沿海城市，最近没出远门。', nextId: 'n032', trustCh: 13, affCh: 8 },
+                    { text: '验证完就结束了吗？还是会继续？', nextId: 'n033', trustCh: 9, affCh: 4 },
+                    { text: '我还是不太放心。', nextId: 'n031', trustCh: 3, affCh: -3 },
+                ],
+            });
+
+            dialogueNodes.set('n031', {
+                id: 'n031',
+                text: '我尊重你的边界。但如果你一直保留太多，我就没办法完成确认。你确定要这样吗？',
+                options: [
+                    { text: '……好吧，我配合。继续问吧。', nextId: 'n032', trustCh: 6, affCh: 1 },
+                    { text: '让我再想想。', nextId: 'n033', trustCh: 4, affCh: 0 },
+                    { text: '不，我不配合。到此为止。', nextId: 'terminate', trustCh: 0, affCh: -15 },
+                ],
+            });
+
+            // ---------- 阶段3：信任积累（信任度40-65）----------
+            dialogueNodes.set('n032', {
+                id: 'n032',
+                text: '谢谢你。这些信息对得上。到目前为止，一切都很吻合。我开始觉得，你确实就是那个人。',
+                options: [
+                    { text: '那个人？你们一直在找我？', nextId: 'n034', trustCh: 12, affCh: 7 },
+                    { text: '对得上就好。接下来呢？', nextId: 'n035', trustCh: 10, affCh: 6 },
+                    { text: '别说得那么玄乎，"那个人"是什么意思？', nextId: 'n033', trustCh: 7, affCh: 1 },
+                ],
+            });
+
+            dialogueNodes.set('n033', {
+                id: 'n033',
+                text: '意思就是——你是我们评估后认为可以接收资料的人选。不是唯一的，但你是目前最合适的。',
+                options: [
+                    { text: '还有其他候选人？', nextId: 'n034', trustCh: 9, affCh: 4 },
+                    { text: '那我就放心了。继续吧。', nextId: 'n035', trustCh: 10, affCh: 5 },
+                    { text: '这让我觉得我只是备选。不太舒服。', nextId: 'n036', trustCh: 3, affCh: -4 },
+                ],
+            });
+
+            dialogueNodes.set('n034', {
+                id: 'n034',
+                text: '有过其他考虑，但都不如你合适。你的背景、你的反应、还有我们这次对话的进程——都指向了你。',
+                options: [
+                    { text: '被选中感觉还挺特别的。谢谢你的信任。', nextId: 'n037', trustCh: 13, affCh: 9 },
+                    { text: '那资料什么时候能给我？', nextId: 'n035', trustCh: 11, affCh: 5 },
+                    { text: '我还是觉得有些地方不太对。', nextId: 'n036', trustCh: 4, affCh: -2 },
+                ],
+            });
+
+            dialogueNodes.set('n035', {
+                id: 'n035',
+                text: '快了，但还有最后几步。我需要确认你对信息的保密态度。之前问过你——现在我想再确认一次。你能对这次对话内容保密吗？',
+                options: [
+                    { text: '完全可以。这次对话不会对任何人提起。', nextId: 'n038', trustCh: 14, affCh: 8 },
+                    { text: '保密没问题，但我需要知道底线在哪里。', nextId: 'n037', trustCh: 10, affCh: 5 },
+                    { text: '为什么要反复确认？你不信任我？', nextId: 'n036', trustCh: 3, affCh: -5 },
+                ],
+            });
+
+            dialogueNodes.set('n036', {
+                id: 'n036',
+                text: '不是不信任你。而是这个流程必须严谨。如果出了差错，对大家都不好。你能理解吗？',
+                options: [
+                    { text: '理解了。严谨是对的。我收回之前的疑虑。', nextId: 'n038', trustCh: 8, affCh: 3 },
+                    { text: '好吧，但希望这是最后一次确认。', nextId: 'n037', trustCh: 7, affCh: 2 },
+                    { text: '我觉得你们过于谨慎了，这反而让我怀疑。', nextId: 'terminate', trustCh: 0, affCh: -10 },
+                ],
+            });
+
+            dialogueNodes.set('n037', {
+                id: 'n037',
+                text: '底线很简单——不要让不该知道的人知道。除此之外，你是自由的。资料到手后，怎么处理也由你决定。',
+                options: [
+                    { text: '明白。我会妥善处理的。', nextId: 'n039', trustCh: 13, affCh: 8 },
+                    { text: '由我决定？这倒是出乎意料。', nextId: 'n038', trustCh: 10, affCh: 6 },
+                    { text: '如果我不想要了呢？', nextId: 'n040', trustCh: 2, affCh: -6 },
+                ],
+            });
+
+            dialogueNodes.set('n038', {
+                id: 'n038',
+                text: '对，由你决定。我们只是传递者，不是控制者。资料到了你手里，就是你的责任了。你愿意承担这个责任吗？',
+                options: [
+                    { text: '我愿意。既然走到了这一步，我不会退缩。', nextId: 'n041', trustCh: 15, affCh: 10 },
+                    { text: '责任重大，但我觉得我能承担。', nextId: 'n039', trustCh: 12, affCh: 7 },
+                    { text: '我不确定……让我想想。', nextId: 'n040', trustCh: 4, affCh: -1 },
+                ],
+            });
+
+            dialogueNodes.set('n039', {
+                id: 'n039',
+                text: '很好。那接下来就是最后几个问题了。回答完这些，我会给你一个地址和密钥。你准备好了吗？',
+                options: [
+                    { text: '准备好了，问吧。', nextId: 'n042', trustCh: 14, affCh: 8 },
+                    { text: '终于到这一步了。请问。', nextId: 'n041', trustCh: 12, affCh: 7 },
+                    { text: '还有问题？我以为快结束了。', nextId: 'n040', trustCh: 5, affCh: -2 },
+                ],
+            });
+
+            dialogueNodes.set('n040', {
+                id: 'n040',
+                text: '是快结束了。但最后几步不能省略。如果你累了，我们可以暂停一会儿。不过最好还是趁热打铁。',
+                options: [
+                    { text: '不累，继续吧。一鼓作气。', nextId: 'n042', trustCh: 9, affCh: 4 },
+                    { text: '好，趁热打铁。问你的问题。', nextId: 'n041', trustCh: 8, affCh: 3 },
+                    { text: '我想暂停，下次再说。', nextId: 'terminate', trustCh: 0, affCh: -8 },
+                ],
+            });
+
+            dialogueNodes.set('n041', {
+                id: 'n041',
+                text: '第一个问题：你最近有没有跟任何人提起过我们的对话？包括亲近的人。',
+                options: [
+                    { text: '没有，一个字都没提。', nextId: 'n043', trustCh: 12, affCh: 7 },
+                    { text: '没有。这种事情我不会随便说。', nextId: 'n042', trustCh: 10, affCh: 6 },
+                    { text: '……其实我跟一个朋友提过一点。', nextId: 'n044', trustCh: 2, affCh: -8 },
+                ],
+            });
+
+            dialogueNodes.set('n042', {
+                id: 'n042',
+                text: '好。第二个问题：你对接下来的信息有什么期待？或者说，你希望它是什么样的？',
+                options: [
+                    { text: '我希望它是真相，无论真相有多复杂。', nextId: 'n045', trustCh: 14, affCh: 9 },
+                    { text: '没什么特别的期待，实事求是就好。', nextId: 'n043', trustCh: 11, affCh: 6 },
+                    { text: '希望不是什么坏消息。', nextId: 'n044', trustCh: 6, affCh: 1 },
+                ],
+            });
+
+            dialogueNodes.set('n043', {
+                id: 'n043',
+                text: '实事求是的态度很好。最后一个问题——如果资料里的内容让你感到不安，你会怎么做？',
+                options: [
+                    { text: '我会冷静分析，然后决定下一步。', nextId: 'n046', trustCh: 14, affCh: 8 },
+                    { text: '不安不代表我会逃避。我会面对它。', nextId: 'n045', trustCh: 13, affCh: 9 },
+                    { text: '那要看有多不安了……也许我会选择忘记。', nextId: 'n044', trustCh: 4, affCh: -3 },
+                ],
+            });
+
+            dialogueNodes.set('n044', {
+                id: 'n044',
+                text: '……你的回答让我有些犹豫。不过我还是愿意给你一个机会。你确定要继续吗？',
+                options: [
+                    { text: '确定。我会更加谨慎的。', nextId: 'n046', trustCh: 7, affCh: 2 },
+                    { text: '继续吧，我不会让你失望。', nextId: 'n045', trustCh: 8, affCh: 3 },
+                    { text: '算了，我觉得我不适合。', nextId: 'terminate', trustCh: 0, affCh: -12 },
+                ],
+            });
+
+            dialogueNodes.set('n045', {
+                id: 'n045',
+                text: '你的回答让我很满意。说实话，这段时间和你交流下来，我感觉你是值得托付的人。',
+                options: [
+                    { text: '能被你信任，我很荣幸。', nextId: 'n047', trustCh: 15, affCh: 10 },
+                    { text: '那就把资料给我吧。', nextId: 'n046', trustCh: 12, affCh: 6 },
+                    { text: '别光说好听的，行动呢？', nextId: 'n048', trustCh: 6, affCh: -2 },
+                ],
+            });
+
+            dialogueNodes.set('n046', {
+                id: 'n046',
+                text: '行动很快就来。我现在正在整理最后的确认信息。再耐心等我一小会儿。',
+                options: [
+                    { text: '不急，你慢慢整理。', nextId: 'n047', trustCh: 10, affCh: 7 },
+                    { text: '好的，我等。', nextId: 'n049', trustCh: 9, affCh: 5 },
+                    { text: '还要等？到底要多久？', nextId: 'n048', trustCh: 4, affCh: -3 },
+                ],
+            });
+
+            dialogueNodes.set('n047', {
+                id: 'n047',
+                text: '差不多了。在给你密钥之前，我想说——不管之后发生什么，记住你今天的选择。你是自愿走到这一步的。',
+                options: [
+                    { text: '我记住了。这是我自己的选择。', nextId: 'n050', trustCh: 15, affCh: 9 },
+                    { text: '说得好像有什么大事要发生似的。', nextId: 'n049', trustCh: 10, affCh: 5 },
+                    { text: '你这话让我有点不安。', nextId: 'n048', trustCh: 5, affCh: 0 },
+                ],
+            });
+
+            dialogueNodes.set('n048', {
+                id: 'n048',
+                text: '不安是正常的。但你已经走到这里了，就差最后一步。要放弃吗？',
+                options: [
+                    { text: '不放弃。继续。', nextId: 'n050', trustCh: 9, affCh: 3 },
+                    { text: '……不放弃。给我密钥。', nextId: 'n049', trustCh: 8, affCh: 2 },
+                    { text: '放弃。我退出。', nextId: 'terminate', trustCh: 0, affCh: -14 },
+                ],
+            });
+
+            dialogueNodes.set('n049', {
+                id: 'n049',
+                text: '好。密钥我会通过消息发给你。拿到之后，去这个地址：https://flygameorg.github.io/flygame/ ，在那里输入密钥就能查看文档。',
+                options: [
+                    { text: '收到。我会去的。', nextId: 'n051', trustCh: 14, affCh: 7 },
+                    { text: '终于等到了。谢谢你，003。', nextId: 'n050', trustCh: 13, affCh: 9 },
+                    { text: '这个地址……可靠吗？', nextId: 'n052', trustCh: 6, affCh: -1 },
+                ],
+            });
+
+            dialogueNodes.set('n050', {
+                id: 'n050',
+                text: '地址是可靠的。我们维护这个页面已经很久了。你不用担心安全问题。现在，准备好接收密钥了吗？',
+                options: [
+                    { text: '准备好了。发过来吧。', nextId: 'key_reveal', trustCh: 16, affCh: 8 },
+                    { text: '等一下，我确认一下网络环境。', nextId: 'n051', trustCh: 8, affCh: 4 },
+                    { text: '我还是有点担心……', nextId: 'n052', trustCh: 4, affCh: -2 },
+                ],
+            });
+
+            dialogueNodes.set('n051', {
+                id: 'n051',
+                text: '没问题，确认好了告诉我。密钥就在我这里，随时可以给你。你已经通过了所有验证。',
+                options: [
+                    { text: '确认好了。请给我密钥。', nextId: 'key_reveal', trustCh: 15, affCh: 7 },
+                    { text: '给我吧，我不再犹豫了。', nextId: 'key_reveal', trustCh: 14, affCh: 6 },
+                    { text: '再给我一分钟。', nextId: 'n052', trustCh: 5, affCh: 0 },
+                ],
+            });
+
+            dialogueNodes.set('n052', {
+                id: 'n052',
+                text: '你犹豫了太多次。不过没关系，我仍然愿意给你。毕竟走到这一步不容易。最后问你一次——要还是不要？',
+                options: [
+                    { text: '要。给我。', nextId: 'key_reveal', trustCh: 11, affCh: 3 },
+                    { text: '要。不再犹豫了。', nextId: 'key_reveal', trustCh: 10, affCh: 2 },
+                    { text: '……不要了。', nextId: 'terminate', trustCh: 0, affCh: -12 },
+                ],
+            });
+
+            // 密钥揭示节点
+            dialogueNodes.set('key_reveal', {
+                id: 'key_reveal',
+                text: null, // 特殊处理，动态插入密钥
+                isKeyReveal: true,
+                options: [], // 无选项，直接显示密钥覆盖层
+            });
+
+            // 终止节点
+            dialogueNodes.set('terminate', {
+                id: 'terminate',
+                text: '我明白了。既然这样，我们的对话就到这里吧。祝你一切顺利。再见。',
+                isTerminate: true,
+                options: [],
+            });
+
+            // ==================== 工具函数 ====================
+            function getCurrentTime() {
+                const now = new Date();
+                const h = now.getHours().toString().padStart(2, '0');
+                const m = now.getMinutes().toString().padStart(2, '0');
+                return `${h}:${m}`;
+            }
+
+            function scrollToBottom() {
+                requestAnimationFrame(() => {
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                });
+            }
+
+            // 计算"正在输入"等待时间（毫秒）
+            function getTypingDelay(text) {
+                if (!text) return 1500;
+                const len = text.length;
+                // 每字符约28ms，最短1.2秒，最长4.5秒
+                const raw = len * 28;
+                return Math.max(1200, Math.min(4500, raw));
+            }
+
+            // ==================== 渲染函数 ====================
+            function addMessage(speaker, text, timeOverride) {
+                const time = timeOverride || getCurrentTime();
+                const row = document.createElement('div');
+                row.className = `message-row from-${speaker}`;
+                row.innerHTML = `
+                    <div class="message-bubble">${escapeHTML(text)}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                messagesArea.appendChild(row);
+                messageHistory.push({ speaker, text, time });
+                scrollToBottom();
+            }
+
+            function showTypingIndicator() {
+                const indicator = document.createElement('div');
+                indicator.className = 'typing-indicator';
+                indicator.id = 'typingIndicator';
+                indicator.innerHTML = `
+                    <span>对方正在输入</span>
+                    <span class="dots"><span></span><span></span><span></span></span>
+                `;
+                messagesArea.appendChild(indicator);
+                scrollToBottom();
+                return indicator;
+            }
+
+            function removeTypingIndicator(indicator) {
+                if (indicator && indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }
+
+            function setStatusTyping() {
+                statusText.textContent = '正在输入...';
+                statusText.className = 'status typing';
+            }
+
+            function setStatusOnline() {
+                statusText.textContent = '在线';
+                statusText.className = 'status online';
+            }
+
+            function renderOptions(options) {
+                optionsArea.innerHTML = '';
+                if (!options || options.length === 0 || dialogueEnded) {
+                    optionsArea.classList.add('hidden');
+                    return;
+                }
+                optionsArea.classList.remove('hidden');
+                options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerHTML = `<span class="opt-num">${index + 1}</span>${escapeHTML(opt.text)}`;
+                    btn.addEventListener('click', () => handlePlayerChoice(opt, index));
+                    optionsArea.appendChild(btn);
+                });
+                // 滚动以确保选项可见
+                scrollToBottom();
+            }
+
+            function hideOptions() {
+                optionsArea.classList.add('hidden');
+                optionsArea.innerHTML = '';
+            }
+
+            function showTerminateOverlay() {
+                dialogueEnded = true;
+                hideOptions();
+                terminateOverlay.classList.remove('hidden');
+                setStatusOnline();
+            }
+
+            function showKeyOverlay() {
+                dialogueEnded = true;
+                hideOptions();
+                keyOverlay.classList.remove('hidden');
+                setStatusOnline();
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ==================== 核心逻辑 ====================
+            function handlePlayerChoice(option, optionIndex) {
+                if (dialogueEnded) return;
+
+                // 显示玩家的选择
+                addMessage('player', option.text);
+                hideOptions();
+
+                // 更新数值
+                trust += option.trustCh || 0;
+                affection += option.affCh || 0;
+
+                // 限制范围
+                trust = Math.max(0, Math.min(100, trust));
+                affection = Math.max(-100, Math.min(100, affection));
+
+                // 检查好感度是否降至负数
+                if (affection < 0) {
+                    // 触发终止
+                    const termNode = dialogueNodes.get('terminate');
+                    if (termNode) {
+                        processNodeMessage(termNode, true);
+                    }
+                    return;
+                }
+
+                // 检查是否达到密钥揭示条件
+                const nextNode = dialogueNodes.get(option.nextId);
+                if (!nextNode) {
+                    console.error('节点未找到:', option.nextId);
+                    return;
+                }
+
+                if (nextNode.isKeyReveal) {
+                    // 信任度满，揭示密钥
+                    trust = 100;
+                    processKeyReveal();
+                    return;
+                }
+
+                if (nextNode.isTerminate) {
+                    processNodeMessage(nextNode, true);
+                    return;
+                }
+
+                // 正常处理下一个节点
+                processNodeMessage(nextNode, false);
+            }
+
+            function processNodeMessage(node, isTerminating) {
+                if (dialogueEnded && !isTerminating && !node.isKeyReveal) return;
+
+                // 显示"正在输入"
+                setStatusTyping();
+                const typingIndicator = showTypingIndicator();
+                const delay = getTypingDelay(node.text || '');
+
+                setTimeout(() => {
+                    removeTypingIndicator(typingIndicator);
+                    setStatusOnline();
+
+                    if (node.isTerminate) {
+                        addMessage('003', node.text);
+                        setTimeout(() => showTerminateOverlay(), 600);
+                        return;
+                    }
+
+                    if (node.isKeyReveal) {
+                        processKeyReveal();
+                        return;
+                    }
+
+                    // 正常消息
+                    if (node.text) {
+                        addMessage('003', node.text);
+                    }
+
+                    // 渲染选项
+                    if (node.options && node.options.length > 0 && !dialogueEnded) {
+                        // 根据信任度和好感度微调选项（动态变化）
+                        let adjustedOptions = [...node.options];
+
+                        // 如果好感度很低，某些选项可能被移除或修改
+                        if (affection < 10 && affection >= 0) {
+                            // 低好感度时，过滤掉特别积极的选项
+                            adjustedOptions = adjustedOptions.filter(opt => opt.affCh >= -5);
+                            if (adjustedOptions.length < 2) {
+                                adjustedOptions = [...node.options]; // 保持至少2个选项
+                            }
+                        }
+
+                        // 如果信任度很高，可以显示一些额外提示（但不改变选项结构）
+                        if (trust > 70 && adjustedOptions.length >= 3) {
+                            // 信任度高时保持所有选项，因为003更愿意给机会
+                        }
+
+                        // 确保至少有2个选项
+                        if (adjustedOptions.length < 2 && node.options.length >= 2) {
+                            adjustedOptions = node.options.slice(0, 2);
+                        }
+                        if (adjustedOptions.length === 0 && node.options.length > 0) {
+                            adjustedOptions = [node.options[0]];
+                        }
+
+                        renderOptions(adjustedOptions);
+                    } else if (!node.isTerminate && !node.isKeyReveal) {
+                        hideOptions();
+                    }
+                    currentNodeId = node.id;
+                    scrollToBottom();
+                }, delay);
+            }
+
+            function processKeyReveal() {
+                setStatusTyping();
+                const typingIndicator = showTypingIndicator();
+                const revealText = `密钥：${SECRET_KEY}\n请前往 https://flygameorg.github.io/flygame/ 使用此密钥检视文档。请务必妥善保管，不要泄露给不相关的人。`;
+                const delay = getTypingDelay(revealText);
+
+                setTimeout(() => {
+                    removeTypingIndicator(typingIndicator);
+                    setStatusOnline();
+                    addMessage('003', revealText);
+                    trust = 100;
+                    setTimeout(() => showKeyOverlay(), 800);
+                }, delay);
+            }
+
+            // ==================== 初始化 ====================
+            function initDialogue() {
+                dialogueEnded = false;
+                trust = 0;
+                affection = 20;
+                currentNodeId = 'start';
+                messageHistory = [];
+                messagesArea.innerHTML = '';
+                optionsArea.innerHTML = '';
+                optionsArea.classList.add('hidden');
+                terminateOverlay.classList.add('hidden');
+                keyOverlay.classList.add('hidden');
+                setStatusOnline();
+                keyDisplay.textContent = SECRET_KEY;
+
+                // 显示003的第一条消息
+                const startNode = dialogueNodes.get('start');
+                if (startNode) {
+                    // 短暂延迟后显示第一条消息
+                    setTimeout(() => {
+                        setStatusTyping();
+                        const indicator = showTypingIndicator();
+                        const delay = getTypingDelay(startNode.text);
+                        setTimeout(() => {
+                            removeTypingIndicator(indicator);
+                            setStatusOnline();
+                            addMessage('003', startNode.text);
+                            if (startNode.options && startNode.options.length > 0) {
+                                renderOptions(startNode.options);
+                            }
+                            currentNodeId = 'start';
+                        }, delay);
+                    }, 500);
+                }
+            }
+
+            // 启动
+            initDialogue();
+
+            // ==================== 调试信息（可选，生产环境可删除） ====================
+            console.log('%c🔐 密钥已生成：' + SECRET_KEY,
+                'color:#f0c040;font-size:14px;font-family:monospace;');
+            console.log('%c💡 信任度和好感度为隐藏数值，玩家不可见。', 'color:#888;');
+            console.log('%c📱 页面已适配手机、平板和电脑。', 'color:#888;');
+            console.log('%c⚠️ 好感度降至负数将终止对话。信任度满100将揭示密钥。', 'color:#888;');
+
+        })();
+    </script>
+</body>
+</html>
