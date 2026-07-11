@@ -1048,7 +1048,7 @@
 
             dialogueNodes.set('n049', {
                 id: 'n049',
-                text: '好。密钥我会通过消息发给你。拿到之后，去这个地址：https://flygameorg.github.io/flygame/ ，在那里输入密钥就能查看文档。',
+                text: '好。密钥我会通过消息发给你。拿到之后，去这个地址：https://katatim.github.io/system/ ，在那里输入密钥就能查看文档。',
                 options: [
                     { text: '收到。我会去的。', nextId: 'n051', trustCh: 14, affCh: 7 },
                     { text: '终于等到了。谢谢你，003。', nextId: 'n050', trustCh: 13, affCh: 9 },
@@ -1327,7 +1327,7 @@
             function processKeyReveal() {
                 setStatusTyping();
                 const typingIndicator = showTypingIndicator();
-                const revealText = `密钥：${SECRET_KEY}\n请前往 https://flygameorg.github.io/flygame/ 使用此密钥检视文档。请务必妥善保管，不要泄露给不相关的人。`;
+                const revealText = `密钥：${SECRET_KEY}\n请前往 https://katatim.github.io/system/ 使用此密钥检视文档。请务必妥善保管，不要泄露给不相关的人。`;
                 const delay = getTypingDelay(revealText);
 
                 setTimeout(() => {
